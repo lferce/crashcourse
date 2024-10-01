@@ -1,18 +1,12 @@
 import os
 from collections import Counter
-from halo import Halo
 from git import Repo
 import pandas as pd
 import string
-import unidecode
 from prettytable import PrettyTable
 from datetime import datetime
 
-startTime = datetime.now()
-
-spinnercheck = Halo(text="Required books found.", spinner="dots")
-spinnerdownload = Halo(text="Cloning repository.", spinner="dots")
-
+pd.options.display.float_format = "{:,}".format
 
 repo_url = "https://github.com/angelgarcan/course-python.git"
 url_parts = repo_url.split("/")
@@ -23,14 +17,11 @@ clone_dir = path
 bookspath = os.path.join(clone_dir, "books", "gutenberg")
 
 
-def librarian():
+def get_books():
     try:
         if os.path.exists(path):
-            spinnercheck.succeed()
             return
-        spinnerdownload.start()
         Repo.clone_from(repo_url, clone_dir, depth=1)
-        spinnerdownload.succeed()
     except Exception as e:
         print(f"Error: {e}")
 
@@ -64,8 +55,24 @@ def read_file(file_path):
     return ""
 
 
-def mr_rogers():
-    startTime_all = datetime.now()
+def normalize_char(s):
+    mapping = {
+        "á": "a",
+        "é": "e",
+        "í": "i",
+        "ó": "o",
+        "ú": "u",
+        "ñ": "n",
+        "ä": "a",
+        "ë": "e",
+        "ï": "i",
+        "ö": "o",
+        "ü": "u",
+    }
+    return "".join(mapping.get(c, c) for c in s)
+
+
+def count_char():
     charcount_all = Counter()
     languages = get_languages()
     charexclusion = (
@@ -79,40 +86,41 @@ def mr_rogers():
             if filename.endswith(".txt"):
                 file_path = os.path.join(root, filename)
                 text = read_file(file_path)
-                text = unidecode.unidecode(text)
                 text = "".join(c for c in text if c not in charexclusion)
                 text = text.lower()
+                text = normalize_char(text)
                 charcount_all.update(text)
 
     df_all = pd.DataFrame(list(charcount_all.items()), columns=["Character", "Count"])
+    df_all["Count"] = df_all["Count"].astype(int)
     df_all.sort_values(by="Count", ascending=False, inplace=True)
     df_all = df_all.reset_index(drop=True)
+    df_all["Count"] = df_all["Count"].map("{:,}".format)
     format_dataframe(df_all.head(10), "Total character count across all files:")
-    print(f"Total all books time: {datetime.now() - startTime_all}")
 
     for language in languages:
-        startTime_lang = datetime.now()
         charcount = Counter()
         for root, dirs, files in os.walk(bookspath):
             for filename in files:
                 if filename.startswith(language) and filename.endswith(".txt"):
                     file_path = os.path.join(root, filename)
                     text = read_file(file_path)
-                    text = unidecode.unidecode(text)
                     text = "".join(c for c in text if c not in charexclusion)
                     text = text.lower()
+                    text = normalize_char(text)
                     charcount.update(text)
 
         if charcount:
             df_lang = pd.DataFrame(
                 list(charcount.items()), columns=["Character", "Count"]
             )
+            df_lang["Count"] = df_lang["Count"].astype(int)
             df_lang.sort_values(by="Count", ascending=False, inplace=True)
             df_lang = df_lang.reset_index(drop=True)
+            df_lang["Count"] = df_lang["Count"].map("{:,}".format)
             format_dataframe(
                 df_lang.head(10), f"Character count for '{language.upper()}':"
             )
-            print(f"{language.upper()} books time: {datetime.now() - startTime_lang}")
 
 
 def format_dataframe(df, title):
@@ -121,11 +129,15 @@ def format_dataframe(df, title):
     for index, row in df.iterrows():
         table.add_row([row["Character"], row["Count"]])
     print(f"\n{title}")
+    table.align["Count"] = "r"
     print(table)
 
 
-librarian()
-get_languages()
-mr_rogers()
+def main():
+    get_books()
+    get_languages()
+    count_char()
 
-print(f"Total book reading time: {datetime.now()-startTime}")
+
+if __name__ == "__main__":
+    main()
