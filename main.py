@@ -73,7 +73,6 @@ def normalize_char(s):
 
 
 def count_char():
-    charcount_all = Counter()
     languages = get_languages()
     charexclusion = (
         string.punctuation
@@ -81,46 +80,45 @@ def count_char():
         + " \u00A0\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u2028\u2029\u3000"
     )
 
+    largest_files = {}
     for root, dirs, files in os.walk(bookspath):
         for filename in files:
             if filename.endswith(".txt"):
+                language = filename[:2]
                 file_path = os.path.join(root, filename)
-                text = read_file(file_path)
-                text = "".join(c for c in text if c not in charexclusion)
-                text = text.lower()
-                text = normalize_char(text)
-                charcount_all.update(text)
+                file_size = os.path.getsize(file_path)
+                if (
+                    language not in largest_files
+                    or file_size > largest_files[language][1]
+                ):
+                    largest_files[language] = (file_path, file_size)
 
-    df_all = pd.DataFrame(list(charcount_all.items()), columns=["Character", "Count"])
-    df_all["Count"] = df_all["Count"].astype(int)
-    df_all.sort_values(by="Count", ascending=False, inplace=True)
-    df_all = df_all.reset_index(drop=True)
-    df_all["Count"] = df_all["Count"].map("{:,}".format)
-    format_dataframe(df_all.head(10), "Total character count across all files:")
+    output = os.path.join("output.txt")
+    with open(output, "w", encoding="utf-8") as file:
+        for language, (file_path, _) in largest_files.items():
+            filename = os.path.basename(file_path)
+            charcount = Counter()
+            text = read_file(file_path)
+            text = "".join(c for c in text if c not in charexclusion)
+            text = text.lower()
+            text = normalize_char(text)
+            charcount.update(text)
 
-    for language in languages:
-        charcount = Counter()
-        for root, dirs, files in os.walk(bookspath):
-            for filename in files:
-                if filename.startswith(language) and filename.endswith(".txt"):
-                    file_path = os.path.join(root, filename)
-                    text = read_file(file_path)
-                    text = "".join(c for c in text if c not in charexclusion)
-                    text = text.lower()
-                    text = normalize_char(text)
-                    charcount.update(text)
+            if charcount:
+                df_lang = pd.DataFrame(
+                    list(charcount.items()), columns=["Character", "Count"]
+                )
+                df_lang["Count"] = df_lang["Count"].astype(int)
+                df_lang.sort_values(by="Count", ascending=False, inplace=True)
+                df_lang = df_lang.reset_index(drop=True)
+                df_lang["Count"] = df_lang["Count"].map("{:,}".format)
 
-        if charcount:
-            df_lang = pd.DataFrame(
-                list(charcount.items()), columns=["Character", "Count"]
-            )
-            df_lang["Count"] = df_lang["Count"].astype(int)
-            df_lang.sort_values(by="Count", ascending=False, inplace=True)
-            df_lang = df_lang.reset_index(drop=True)
-            df_lang["Count"] = df_lang["Count"].map("{:,}".format)
-            format_dataframe(
-                df_lang.head(10), f"Character count for '{language.upper()}':"
-            )
+                result = f"\n\nCharacter count for '{language.upper()}':\n"
+                result += df_lang.head(10).to_string(index=False)
+
+                print(f"\n\nCharacter count for '{language.upper()}':")
+                format_dataframe(df_lang.head(10), "")
+                file.write(result)
 
 
 def format_dataframe(df, title):
@@ -128,7 +126,7 @@ def format_dataframe(df, title):
     table.field_names = ["Character", "Count"]
     for index, row in df.iterrows():
         table.add_row([row["Character"], row["Count"]])
-    print(f"\n{title}")
+    print(f"{title}")
     table.align["Count"] = "r"
     print(table)
 

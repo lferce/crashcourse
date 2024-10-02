@@ -1,0 +1,53 @@
+
+
+Character count for 'FR':
+Character  Count
+        e 96,923
+        s 52,328
+        a 47,024
+        n 43,075
+        t 40,598
+        i 39,666
+        r 38,438
+        u 38,031
+        o 31,389
+        l 30,821
+
+Character count for 'DE':
+Character   Count
+        e 904,407
+        n 552,068
+        r 422,731
+        i 422,603
+        s 356,786
+        a 350,054
+        t 346,848
+        d 287,875
+        u 250,820
+        h 249,182
+
+Character count for 'EN':
+Character  Count
+        e 55,122
+        t 36,778
+        a 32,999
+        n 31,284
+        o 30,934
+        i 29,372
+        s 29,143
+        r 26,552
+        h 23,084
+        l 19,026
+
+Character count for 'ES':
+Character  Count
+        a 77,796
+        e 75,990
+        o 55,798
+        s 43,857
+        n 40,827
+        r 37,454
+        i 35,473
+        l 32,506
+        d 28,513
+        u 25,154
