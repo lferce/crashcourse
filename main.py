@@ -97,6 +97,7 @@ def count_char():
     with open(output, "w", encoding="utf-8") as file:
         for language, (file_path, _) in largest_files.items():
             filename = os.path.basename(file_path)
+            print(filename)
             charcount = Counter()
             text = read_file(file_path)
             text = "".join(c for c in text if c not in charexclusion)
